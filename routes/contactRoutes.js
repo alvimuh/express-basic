@@ -31,7 +31,7 @@ router.use(logger);
  * Mendapatkan semua data kontak
  * Menggunakan middleware queryParser untuk memproses query parameters
  */
-router.get("/", queryParser, contactController.getAllContacts);
+router.get("/", queryParser, contactController.getAllContactsMinimal);
 
 /**
  * GET /contact/:id
@@ -48,12 +48,7 @@ router.get("/:id", contactController.getContactById);
  * - authenticate: Memvalidasi API key
  * - validator: Memvalidasi body request dengan ContactSchema
  */
-router.post(
-  "/",
-  authenticate,
-  validator(ContactSchema),
-  contactController.createContact
-);
+router.post("/", contactController.createContact);
 
 /**
  * PUT /contact
@@ -63,12 +58,7 @@ router.post(
  * - authenticate: Memvalidasi API key
  * - validator: Memvalidasi body request dengan ContactUpdateSchema
  */
-router.put(
-  "/",
-  authenticate,
-  validator(ContactUpdateSchema),
-  contactController.updateContact
-);
+router.put("/", contactController.update);
 
 /**
  * PATCH /contact

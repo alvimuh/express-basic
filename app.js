@@ -1,12 +1,17 @@
 /**
- * Express.js Middleware Tutorial
+ * Express.js dan MongoDB Tutorial
  *
- * Aplikasi ini dibuat untuk mendemonstrasikan penggunaan middleware di Express.js
+ * Aplikasi ini dibuat untuk mendemonstrasikan penggunaan Express.js dengan MongoDB
  * dengan penjelasan dalam Bahasa Indonesia.
  */
 
+// Import dependencies
 const express = require("express");
 const app = express();
+require('dotenv').config();
+
+// Import database connection
+const connectDB = require('./config/database');
 
 // Import routes
 const contactRoutes = require("./routes/contactRoutes");
@@ -76,8 +81,19 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 /**
- * Menjalankan server pada port 3000
+ * Menghubungkan ke MongoDB dan menjalankan server
  */
-app.listen(3000, () => {
-  console.log("Server berjalan pada port 3000");
-});
+// Menggunakan port dari environment variable atau default 3000
+const PORT = process.env.PORT || 3000;
+
+// Menghubungkan ke MongoDB terlebih dahulu, kemudian menjalankan server
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server berjalan pada port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error(`Error connecting to MongoDB: ${err.message}`);
+    process.exit(1);
+  });
