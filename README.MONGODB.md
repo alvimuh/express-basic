@@ -58,6 +58,51 @@ MongoDB menyimpan data dalam format BSON (Binary JSON). Contoh dokumen kontak:
 - **Update**: Mengupdate dokumen yang ada
 - **Delete**: Menghapus dokumen dari database
 
+### Mongosh (Mongo Shell)
+
+MongoDB Shell (mongosh) adalah antarmuka baris perintah interaktif yang digunakan untuk berkomunikasi dengan server MongoDB. Perintah-perintah dalam mongosh memungkinkan pengguna untuk melakukan berbagai operasi pada database MongoDB langsung dari command line.
+
+### Membuat Database
+
+Untuk membuat database baru di MongoDB, Anda tidak perlu menjalankan perintah khusus. Database akan secara otomatis dibuat ketika Anda membuat koleksi pertama di dalamnya. Gunakan perintah use untuk memulai menggunakan database atau membuatnya jika belum ada:
+
+```bash
+use newDatabase
+```
+
+Operasi CRUD
+CRUD singkatan dari Create, Read, Update, dan Delete. Berikut adalah contoh operasi CRUD menggunakan mongosh.
+
+Create (Insert) Menambahkan dokumen ke dalam koleksi.
+
+```bash
+db.collectionName.insertOne({ key: "value" })
+db.collectionName.insertMany([{ key1: "value1" }, { key2: "value2" }])
+```
+
+Read (Query) Membaca atau mencari dokumen dalam koleksi.
+
+```bash
+db.collectionName.find()
+db.collectionName.find({ key: "value" })
+db.collectionName.findOne({ key: "value" })
+db.collectionName.find({ key: { $gt: "value" } })
+```
+
+Update Memodifikasi dokumen yang sudah ada dalam koleksi.
+
+```bash
+db.collectionName.updateOne({ key: "value" }, { $set: { keyUpdated: "newValue" } })
+db.collectionName.updateMany({ key: { $gt: "value" } }, { $set: { keyUpdated: "newValue" } })
+```
+
+Delete Menghapus dokumen dari koleksi.
+
+```bash
+db.collectionName.deleteOne({ key: "value" })
+db.collectionName.deleteMany({ key: { $gt: "value" } })
+```
+
 ## 2. Menggunakan Mongoose
 
 Mongoose adalah ODM (Object Document Mapper) untuk MongoDB dan Node.js yang menyediakan solusi berbasis skema untuk memodelkan data aplikasi.
@@ -73,15 +118,15 @@ npm install mongoose dotenv
 File `config/database.js`:
 
 ```javascript
-const mongoose = require('mongoose');
-require('dotenv').config();
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI);
-    
+
     console.log(`MongoDB Connected: ${conn.connection.host}`);
-    
+
     return conn;
   } catch (error) {
     console.error(`Error: ${error.message}`);
@@ -99,31 +144,37 @@ File `models/contact.js`:
 ```javascript
 const mongoose = require("mongoose");
 
-const ContactMongooseSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, "Nama harus diisi"],
-    maxlength: [255, "Nama tidak boleh lebih dari 255 karakter"]
+const ContactMongooseSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Nama harus diisi"],
+      maxlength: [255, "Nama tidak boleh lebih dari 255 karakter"],
+    },
+    email: {
+      type: String,
+      required: [true, "Email harus diisi"],
+      unique: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        "Format email tidak valid",
+      ],
+    },
+    mobileNumber: {
+      type: String,
+      required: [true, "Nomor telepon harus diisi"],
+      match: [/^[0-9]{10,13}$/, "Nomor telepon harus berisi 10-13 digit angka"],
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  email: {
-    type: String,
-    required: [true, "Email harus diisi"],
-    unique: true,
-    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, "Format email tidak valid"]
-  },
-  mobileNumber: {
-    type: String,
-    required: [true, "Nomor telepon harus diisi"],
-    match: [/^[0-9]{10,13}$/, "Nomor telepon harus berisi 10-13 digit angka"]
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
-}, {
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
-});
+);
 
 const Contact = mongoose.model("Contact", ContactMongooseSchema);
 
@@ -137,10 +188,10 @@ File `app.js`:
 ```javascript
 const express = require("express");
 const app = express();
-require('dotenv').config();
+require("dotenv").config();
 
 // Import database connection
-const connectDB = require('./config/database');
+const connectDB = require("./config/database");
 
 // Middleware dan routes...
 
@@ -153,7 +204,7 @@ connectDB()
       console.log(`Server berjalan pada port ${PORT}`);
     });
   })
-  .catch(err => {
+  .catch((err) => {
     console.error(`Error connecting to MongoDB: ${err.message}`);
     process.exit(1);
   });
@@ -168,7 +219,7 @@ async function createContact(req, res) {
   try {
     // Body sudah divalidasi oleh middleware validator
     const newContact = await Contact.create(req.body);
-    
+
     res.status(201).json(successResponse(newContact));
   } catch (error) {
     // Handle error
@@ -182,31 +233,33 @@ async function createContact(req, res) {
 async function getAllContacts(req, res) {
   try {
     const { page = 1, limit = 10, search } = req.parsedQuery || {};
-    
+
     // Membuat query filter jika ada parameter search
     const filter = {};
     if (search) {
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
       ];
     }
-    
+
     // Menghitung total dokumen untuk pagination
     const total = await Contact.countDocuments(filter);
-    
+
     // Mengambil data dengan pagination
     const contacts = await Contact.find(filter)
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
-    
-    res.json(successResponse({
-      contacts,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      totalItems: total
-    }));
+
+    res.json(
+      successResponse({
+        contacts,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        totalItems: total,
+      })
+    );
   } catch (error) {
     // Handle error
   }
@@ -215,11 +268,11 @@ async function getAllContacts(req, res) {
 async function getContactById(req, res) {
   try {
     const contact = await Contact.findById(req.params.id);
-    
+
     if (!contact) {
       return res.status(404).json(errorResponse("Kontak tidak ditemukan"));
     }
-    
+
     res.json(successResponse(contact));
   } catch (error) {
     // Handle error
@@ -233,17 +286,16 @@ async function getContactById(req, res) {
 async function updateContact(req, res) {
   try {
     const { id, ...updateData } = req.body;
-    
-    const updatedContact = await Contact.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    );
-    
+
+    const updatedContact = await Contact.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
     if (!updatedContact) {
       return res.status(404).json(errorResponse("Kontak tidak ditemukan"));
     }
-    
+
     res.json(successResponse(updatedContact));
   } catch (error) {
     // Handle error
@@ -257,12 +309,14 @@ async function updateContact(req, res) {
 async function deleteContact(req, res) {
   try {
     const deletedContact = await Contact.findByIdAndDelete(req.params.id);
-    
+
     if (!deletedContact) {
       return res.status(404).json(errorResponse("Kontak tidak ditemukan"));
     }
-    
-    res.json(successResponse({ message: "Kontak berhasil dihapus", deletedContact }));
+
+    res.json(
+      successResponse({ message: "Kontak berhasil dihapus", deletedContact })
+    );
   } catch (error) {
     // Handle error
   }
@@ -338,12 +392,12 @@ MongoDB adalah database NoSQL berbasis dokumen, berbeda dengan database relasion
 Mongoose menyediakan hooks yang dapat digunakan untuk menjalankan fungsi sebelum atau sesudah operasi database:
 
 ```javascript
-ContactMongooseSchema.pre('save', function(next) {
+ContactMongooseSchema.pre("save", function (next) {
   // Kode yang dijalankan sebelum dokumen disimpan
   next();
 });
 
-ContactMongooseSchema.post('findOneAndUpdate', function(doc) {
+ContactMongooseSchema.post("findOneAndUpdate", function (doc) {
   // Kode yang dijalankan setelah dokumen diupdate
 });
 ```
@@ -358,8 +412,11 @@ const ContactMongooseSchema = new mongoose.Schema({
     type: String,
     required: [true, "Email harus diisi"],
     unique: true,
-    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, "Format email tidak valid"]
-  }
+    match: [
+      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      "Format email tidak valid",
+    ],
+  },
 });
 ```
 
