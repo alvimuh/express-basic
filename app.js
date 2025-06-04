@@ -8,13 +8,14 @@
 // Import dependencies
 const express = require("express");
 const app = express();
-require('dotenv').config();
+require("dotenv").config();
 
 // Import database connection
-const connectDB = require('./config/database');
+const connectDB = require("./config/database");
 
 // Import routes
 const contactRoutes = require("./routes/contactRoutes");
+const invoiceRoutes = require("./routes/invoiceRoutes");
 
 // Import middleware
 const logger = require("./middlewares/logger");
@@ -57,6 +58,7 @@ app.get("/", (req, res) => {
  * - Memudahkan pengelolaan dan pemeliharaan kode
  */
 app.use("/contact", contactRoutes);
+app.use("/invoice", invoiceRoutes);
 
 /**
  * Middleware untuk menangani route yang tidak ditemukan
@@ -93,7 +95,7 @@ connectDB()
       console.log(`Server berjalan pada port ${PORT}`);
     });
   })
-  .catch(err => {
+  .catch((err) => {
     console.error(`Error connecting to MongoDB: ${err.message}`);
     process.exit(1);
   });
