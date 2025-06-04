@@ -1,0 +1,41 @@
+<%- include('partials/header') %>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Selamat Datang di Express Basic Tutorial</h1>
+                <p class="card-text">
+                    Tutorial ini mendemonstrasikan cara mengintegrasikan API dengan frontend menggunakan Express.js.
+                </p>
+                <h2>Dua Pendekatan Integrasi API dengan Frontend</h2>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h3 class="h5 mb-0">1. Server-side Rendering (SSR)</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Menggunakan EJS sebagai template engine untuk merender HTML di server.</p>
+                                <a href="/contacts" class="btn btn-primary">Lihat Contoh SSR</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <h3 class="h5 mb-0">2. Client-side API Integration</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Menggunakan JavaScript untuk mengambil data dari API dan merender di browser.</p>
+                                <a href="/contacts/add" class="btn btn-success">Lihat Contoh Client-side</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

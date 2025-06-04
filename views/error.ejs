@@ -1,0 +1,18 @@
+<%- include('partials/header') %>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h2 class="mb-0">Error</h2>
+            </div>
+            <div class="card-body">
+                <h3><%= error.status || 500 %> - <%= error.message || 'Internal Server Error' %></h3>
+                <p>Terjadi kesalahan saat memproses permintaan Anda.</p>
+                <a href="/" class="btn btn-primary">Kembali ke Halaman Utama</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

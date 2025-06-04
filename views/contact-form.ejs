@@ -1,0 +1,158 @@
+<%- include('partials/header') %>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h2 class="mb-0">Tambah Kontak Baru (Client-side Integration)</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Client-side API Integration</h5>
+                        <p>Halaman ini mendemonstrasikan penggunaan JavaScript untuk mengirim data ke API dari browser.
+                        </p>
+                    </div>
+
+                    <form id="contact-form">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nama <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="invalid-feedback" id="name-error"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="invalid-feedback" id="email-error"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Telepon</label>
+                            <input type="tel" class="form-control" id="phone" name="phone">
+                            <div class="invalid-feedback" id="phone-error"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Alamat</label>
+                            <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                            <div class="invalid-feedback" id="address-error"></div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success" id="submit-btn">Simpan</button>
+                        </div>
+                    </form>
+
+                    <div id="result" class="mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('contact-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const resultDiv = document.getElementById('result');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Reset previous error messages
+                document.querySelectorAll('.invalid-feedback').forEach(el => {
+                    el.textContent = '';
+                });
+                document.querySelectorAll('.form-control').forEach(el => {
+                    el.classList.remove('is-invalid');
+                });
+
+                // Disable submit button and show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...';
+
+                // Get form data
+                const formData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    address: document.getElementById('address').value
+                };
+
+                console.log(formData);
+
+                try {
+                    // Send data to API
+                    const response = await fetch('/api/contact', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    // Parse response
+                    const data = await response.json();
+
+                    console.log(response.ok)
+
+                    if (response.ok) {
+                        // Show success message
+                        resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>Kontak berhasil ditambahkan!</h5>
+                            <p>Data kontak telah berhasil disimpan ke database.</p>
+                            <hr>
+                            <p class="mb-0">
+                                <a href="/contacts" class="btn btn-primary btn-sm">Lihat Daftar Kontak</a>
+                                <button class="btn btn-secondary btn-sm" onclick="resetForm()">Tambah Kontak Lain</button>
+                            </p>
+                        </div>
+                    `;
+                        resultDiv.style.display = 'block';
+                        form.reset();
+                    } else {
+                        // Handle validation errors
+                        if (data.errors) {
+                            Object.keys(data.errors).forEach(field => {
+                                const errorElement = document.getElementById(`${field}-error`);
+                                const inputElement = document.getElementById(field);
+                                if (errorElement && inputElement) {
+                                    errorElement.textContent = data.errors[field];
+                                    inputElement.classList.add('is-invalid');
+                                }
+                            });
+                        } else {
+                            // Show general error message
+                            resultDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h5>Error!</h5>
+                                <p>${data.message || 'Terjadi kesalahan saat menyimpan data.'}</p>
+                            </div>
+                        `;
+                            resultDiv.style.display = 'block';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>Error!</h5>
+                        <p>Terjadi kesalahan saat menghubungi server. Silakan coba lagi nanti.</p>
+                    </div>
+                `;
+                    resultDiv.style.display = 'block';
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Simpan';
+                }
+            });
+        });
+
+        function resetForm() {
+            document.getElementById('contact-form').reset();
+            document.getElementById('result').style.display = 'none';
+        }
+    </script>
+
+    <%- include('partials/footer') %>

@@ -7,6 +7,7 @@
 
 // Import dependencies
 const express = require("express");
+const path = require("path");
 const app = express();
 require("dotenv").config();
 
@@ -31,6 +32,19 @@ const authenticate = require("./middlewares/authentication");
  * - Middleware ini harus ditempatkan sebelum route handler yang membutuhkan akses ke req.body
  */
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+/**
+ * Configure EJS as template engine
+ *
+ * Penjelasan:
+ * - EJS (Embedded JavaScript) adalah template engine untuk Express.js
+ * - Views akan disimpan di folder ./views
+ * - File static (CSS, JS, images) akan disimpan di folder ./public
+ */
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use(express.static(path.join(__dirname, "assets")));
 
 /**
  * Middleware Application-level: Logger
@@ -40,13 +54,31 @@ app.use(express.json());
  * - Mencatat method dan URL request
  * - Ditempatkan di awal untuk mencatat semua request
  */
-app.use(authenticate);
+// app.use(authenticate);
 
 /**
  * Route untuk halaman utama
  */
 app.get("/", (req, res) => {
-  res.send("Selamat datang di tutorial Express.js Middleware");
+  res.render("index", { title: "Express Basic Tutorial" });
+});
+
+/**
+ * Route untuk halaman kontak (server-side rendering)
+ */
+app.get("/contacts", async (req, res) => {
+  try {
+    res.render("contacts", { title: "Daftar Kontak" });
+  } catch (error) {
+    res.status(500).render("error", { error });
+  }
+});
+
+/**
+ * Route untuk halaman form tambah kontak
+ */
+app.get("/contacts/add", (req, res) => {
+  res.render("contact-form", { title: "Tambah Kontak Baru" });
 });
 
 /**
@@ -57,8 +89,8 @@ app.get("/", (req, res) => {
  * - Mengelompokkan route terkait kontak dalam satu file terpisah
  * - Memudahkan pengelolaan dan pemeliharaan kode
  */
-app.use("/contact", contactRoutes);
-app.use("/invoice", invoiceRoutes);
+app.use("/api/contact", contactRoutes);
+app.use("/api/invoice", invoiceRoutes);
 
 /**
  * Middleware untuk menangani route yang tidak ditemukan
@@ -86,7 +118,7 @@ app.use(errorHandler);
  * Menghubungkan ke MongoDB dan menjalankan server
  */
 // Menggunakan port dari environment variable atau default 3000
-const PORT = process.env.PORT || 3000;
+const PORT = 3001;
 
 // Menghubungkan ke MongoDB terlebih dahulu, kemudian menjalankan server
 connectDB()

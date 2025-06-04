@@ -1,0 +1,143 @@
+<%- include('partials/header') %>
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Daftar Kontak (Server-side Rendering)</h2>
+                <a href="/contacts/add" class="btn btn-light btn-sm">Tambah Kontak</a>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5>Server-side Rendering (SSR)</h5>
+                    <p>Halaman ini mendemonstrasikan penggunaan server-side rendering dengan EJS. Data kontak diambil dari API dan dirender di server sebelum dikirim ke browser.</p>
+                </div>
+                
+                <div id="contact-list">
+                    <div class="d-flex justify-content-center my-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Mengambil data kontak dari API menggunakan fetch
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('/contact');
+            const contacts = await response.json();
+            
+            const contactListElement = document.getElementById('contact-list');
+            
+            if (contacts.length === 0) {
+                contactListElement.innerHTML = '<div class="alert alert-warning">Belum ada data kontak.</div>';
+                return;
+            }
+            
+            let html = '<div class="table-responsive"><table class="table table-striped table-hover">';
+            html += '<thead><tr><th>Nama</th><th>Email</th><th>Telepon</th><th>Aksi</th></tr></thead>';
+            html += '<tbody>';
+            
+            contacts.forEach(contact => {
+                html += `<tr>
+                    <td>${contact.name || '-'}</td>
+                    <td>${contact.email || '-'}</td>
+                    <td>${contact.phone || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info view-contact" data-id="${contact._id}">Detail</button>
+                        <button class="btn btn-sm btn-danger delete-contact" data-id="${contact._id}">Hapus</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            contactListElement.innerHTML = html;
+            
+            // Menambahkan event listener untuk tombol detail
+            document.querySelectorAll('.view-contact').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    try {
+                        const response = await fetch(`/contact/${id}`);
+                        const contact = await response.json();
+                        
+                        // Membuat modal untuk menampilkan detail kontak
+                        const modalHtml = `
+                            <div class="modal fade" id="contactDetailModal" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Detail Kontak: ${contact.name}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p><strong>Nama:</strong> ${contact.name}</p>
+                                            <p><strong>Email:</strong> ${contact.email || '-'}</p>
+                                            <p><strong>Telepon:</strong> ${contact.phone || '-'}</p>
+                                            <p><strong>Alamat:</strong> ${contact.address || '-'}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Menambahkan modal ke DOM
+                        document.body.insertAdjacentHTML('beforeend', modalHtml);
+                        
+                        // Menampilkan modal
+                        const modal = new bootstrap.Modal(document.getElementById('contactDetailModal'));
+                        modal.show();
+                        
+                        // Menghapus modal dari DOM setelah ditutup
+                        document.getElementById('contactDetailModal').addEventListener('hidden.bs.modal', function () {
+                            this.remove();
+                        });
+                    } catch (error) {
+                        alert('Gagal mengambil detail kontak');
+                        console.error(error);
+                    }
+                });
+            });
+            
+            // Menambahkan event listener untuk tombol hapus
+            document.querySelectorAll('.delete-contact').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    if (confirm('Apakah Anda yakin ingin menghapus kontak ini?')) {
+                        const id = e.target.getAttribute('data-id');
+                        try {
+                            const response = await fetch(`/contact/${id}`, {
+                                method: 'DELETE'
+                            });
+                            
+                            if (response.ok) {
+                                alert('Kontak berhasil dihapus');
+                                // Refresh halaman untuk memperbarui daftar kontak
+                                window.location.reload();
+                            } else {
+                                const error = await response.json();
+                                alert(`Gagal menghapus kontak: ${error.message}`);
+                            }
+                        } catch (error) {
+                            alert('Gagal menghapus kontak');
+                            console.error(error);
+                        }
+                    }
+                });
+            });
+            
+        } catch (error) {
+            document.getElementById('contact-list').innerHTML = '<div class="alert alert-danger">Gagal mengambil data kontak.</div>';
+            console.error(error);
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>
